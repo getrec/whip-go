@@ -11,23 +11,22 @@ import (
 	"github.com/pion/mediadevices/pkg/codec/opus"
 	"github.com/pion/mediadevices/pkg/codec/vpx"
 	"github.com/pion/mediadevices/pkg/codec/x264"
-	_ "github.com/pion/mediadevices/pkg/driver/screen" // This is required to register screen adapter
 	"github.com/pion/mediadevices/pkg/prop"
 
-	//_ "github.com/pion/mediadevices/pkg/driver/camera"
-	//_ "github.com/pion/mediadevices/pkg/driver/microphone"
-	_ "github.com/pion/mediadevices/pkg/driver/audiotest"
-	_ "github.com/pion/mediadevices/pkg/driver/videotest"
+	_ "github.com/getrec/whip-go/driver/audiotest"
+	_ "github.com/getrec/whip-go/driver/videotest"
 	"github.com/pion/webrtc/v3"
 )
 
 func main() {
-	video := flag.String("v", "screen", "input video device, can be \"screen\" or a named pipe")
-	audio := flag.String("a", "", "input audio device, can be a named pipe")
-	videoBitrate := flag.Int("b", 1_000_000, "video bitrate in bits per second")
 	iceServer := flag.String("i", "stun:stun.l.google.com:19302", "ice server")
-	token := flag.String("t", "", "publishing token")
-	videoCodec := flag.String("vc", "vp8", "video codec vp8|h264")
+	token := flag.String("t", "whip-go", "publishing token")
+	videoCodec := flag.String("vc", "h264", "video codec vp8|h264")
+	audioBitrate := flag.Int("ab", 160_000, "video bitrate in bits per second")
+	videoBitrate := flag.Int("vb", 3_000_000, "video bitrate in bits per second")
+	videoWidth := flag.Int("vw", 1280, "video width in pixels")
+	videoHeight := flag.Int("vh", 720, "video height in pixels")
+	videoFrameRate := flag.Float64("vf", 30, "video frame rate in frames per second")
 	flag.Parse()
 
 	if len(flag.Args()) != 1 {
@@ -48,13 +47,14 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	opusParams.BitRate = *audioBitrate
 
 	x264Params, err := x264.NewParams()
 	if err != nil {
 		panic(err)
 	}
 	x264Params.BitRate = *videoBitrate
-	x264Params.Preset = x264.PresetUltrafast
+	x264Params.Preset = x264.PresetSuperfast
 
 	var videoCodecSelector mediadevices.CodecSelectorOption
 	if *videoCodec == "vp8" {
@@ -64,46 +64,23 @@ func main() {
 	}
 	var stream mediadevices.MediaStream
 
-	if *video == "screen" {
-		codecSelector := mediadevices.NewCodecSelector(videoCodecSelector)
-		codecSelector.Populate(&mediaEngine)
+	codecSelector := mediadevices.NewCodecSelector(
+		videoCodecSelector,
+		mediadevices.WithAudioEncoders(&opusParams),
+	)
+	codecSelector.Populate(&mediaEngine)
 
-		stream, err = mediadevices.GetDisplayMedia(mediadevices.MediaStreamConstraints{
-			Video: func(constraint *mediadevices.MediaTrackConstraints) {},
-			Codec: codecSelector,
-		})
-		if err != nil {
-			log.Fatal("Unexpected error capturing screen. ", err)
-		}
-	} else if *video == "test" {
-		codecSelector := mediadevices.NewCodecSelector(
-			videoCodecSelector,
-			mediadevices.WithAudioEncoders(&opusParams),
-		)
-		codecSelector.Populate(&mediaEngine)
-
-		stream, err = mediadevices.GetUserMedia(mediadevices.MediaStreamConstraints{
-			Video: func(constraint *mediadevices.MediaTrackConstraints) {
-				constraint.Width = prop.Int(640)
-				constraint.Height = prop.Int(480)
-			},
-			Audio: func(constraint *mediadevices.MediaTrackConstraints) {},
-			Codec: codecSelector,
-		})
-		if err != nil {
-			log.Fatal("Unexpected error capturing test source. ", err)
-		}
-	} else {
-		codecSelector := NewCodecSelector(
-			WithVideoEncoders(&vpxParams),
-			WithAudioEncoders(&opusParams),
-		)
-		codecSelector.Populate(&mediaEngine)
-
-		stream, err = GetInputMediaStream(*audio, *video, codecSelector)
-		if err != nil {
-			log.Fatal("Unexpected error capturing input pipe. ", err)
-		}
+	stream, err = mediadevices.GetUserMedia(mediadevices.MediaStreamConstraints{
+		Video: func(constraint *mediadevices.MediaTrackConstraints) {
+			constraint.Width = prop.Int(*videoWidth)
+			constraint.Height = prop.Int(*videoHeight)
+			constraint.FrameRate = prop.Float(*videoFrameRate)
+		},
+		Audio: func(constraint *mediadevices.MediaTrackConstraints) {},
+		Codec: codecSelector,
+	})
+	if err != nil {
+		log.Fatal("Unexpected error capturing test source. ", err)
 	}
 
 	iceServers := []webrtc.ICEServer{
