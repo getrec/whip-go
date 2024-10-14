@@ -46,6 +46,79 @@ func (d *dummy) Close() error {
 }
 
 func (d *dummy) VideoRecord(p prop.Media) (video.Reader, error) {
+	font := [10][5][3]int{
+		{
+			{0, 0, 0},
+			{0, 1, 0},
+			{0, 1, 0},
+			{0, 1, 0},
+			{0, 0, 0},
+		},
+		{
+			{1, 0, 1},
+			{0, 0, 1},
+			{1, 0, 1},
+			{1, 0, 1},
+			{0, 0, 0},
+		},
+		{
+			{0, 0, 1},
+			{1, 1, 0},
+			{1, 0, 1},
+			{0, 1, 1},
+			{0, 0, 0},
+		},
+		{
+			{0, 0, 0},
+			{1, 1, 0},
+			{1, 0, 0},
+			{1, 1, 0},
+			{0, 0, 0},
+		},
+		{
+			{0, 1, 0},
+			{0, 1, 0},
+			{0, 0, 0},
+			{1, 1, 0},
+			{1, 1, 0},
+		},
+		{
+			{0, 0, 0},
+			{0, 1, 1},
+			{0, 0, 0},
+			{1, 1, 0},
+			{0, 0, 1},
+		},
+		{
+			{1, 0, 0},
+			{0, 1, 1},
+			{0, 0, 0},
+			{0, 1, 0},
+			{0, 0, 0},
+		},
+		{
+			{0, 0, 0},
+			{1, 1, 0},
+			{1, 0, 1},
+			{0, 1, 1},
+			{0, 1, 1},
+		},
+		{
+			{0, 0, 0},
+			{0, 1, 0},
+			{0, 0, 0},
+			{0, 1, 0},
+			{0, 0, 0},
+		},
+		{
+			{0, 0, 0},
+			{0, 1, 0},
+			{0, 0, 0},
+			{1, 1, 0},
+			{0, 0, 1},
+		},
+	}
+
 	colors := [][3]byte{
 		{235, 128, 128},
 		{210, 16, 146},
@@ -55,11 +128,6 @@ func (d *dummy) VideoRecord(p prop.Media) (video.Reader, error) {
 		{82, 90, 240},
 		{41, 240, 110},
 	}
-
-	// numbers := [][12]bool{
-	// 	{false, false, false, true, false, false, false, true, false, false, false, true},
-	// 	{false, true, true, false, false, false, true, false, false, false, true, true},
-	// }
 
 	yi := p.Width * p.Height
 	ci := yi / 2
@@ -114,28 +182,39 @@ func (d *dummy) VideoRecord(p prop.Media) (video.Reader, error) {
 		now := time.Now()
 		// format: sssmm (s - second, m - millisecond)
 		timestamp := int(now.UnixMilli() / 10 % 100000)
-		numbers := [5]int{
-			timestamp / 10000,
+		numbers := [4]int{
 			timestamp / 1000 % 10,
 			timestamp / 100 % 10,
 			timestamp / 10 % 10,
 			timestamp % 10,
 		}
 
-		for y := 0; y < 5; y++ {
-			yi := p.Width * (y * 5 + 16)
-			for x := 0; x < numbers[y]; x++ {
-				xi := x * 5 + 16
+		for i := 0; i < 4; i++ {
+			number := numbers[i]
+			digit := font[number]
+			for y := 0; y < 5; y++ {
+				py := p.Width * (y * 4 + 16)
+				for x :=0; x < 3; x++ {
+					px := x * 4 + 16 + i * 16
 
-				yy[yi+xi] = byte(x % 3 * 60)
-				yy[yi+xi+1] = byte(x % 3 * 60)
-				yy[yi+xi+2] = byte(x % 3 * 60)
-				yy[yi+xi+p.Width] = byte(x % 3 * 60)
-				yy[yi+xi+p.Width+1] = byte(x % 3 * 60)
-				yy[yi+xi+p.Width+2] = byte(x % 3 * 60)
-				yy[yi+xi+p.Width+p.Width] = byte(x % 3 * 60)
-				yy[yi+xi+p.Width+p.Width+1] = byte(x % 3 * 60)
-				yy[yi+xi+p.Width+p.Width+2] = byte(x % 3 * 60)
+					pixel := digit[y][x]
+					yy[py+px] = byte(pixel * 200)
+					yy[py+px+1] = byte(pixel * 200)
+					yy[py+px+2] = byte(pixel * 200)
+					yy[py+px+3] = byte(pixel * 200)
+					yy[py+px+p.Width] = byte(pixel * 200)
+					yy[py+px+p.Width+1] = byte(pixel * 200)
+					yy[py+px+p.Width+2] = byte(pixel * 200)
+					yy[py+px+p.Width+3] = byte(pixel * 200)
+					yy[py+px+p.Width+p.Width] = byte(pixel * 200)
+					yy[py+px+p.Width+p.Width+1] = byte(pixel * 200)
+					yy[py+px+p.Width+p.Width+2] = byte(pixel * 200)
+					yy[py+px+p.Width+p.Width+3] = byte(pixel * 200)
+					yy[py+px+p.Width+p.Width+p.Width] = byte(pixel * 200)
+					yy[py+px+p.Width+p.Width+p.Width+1] = byte(pixel * 200)
+					yy[py+px+p.Width+p.Width+p.Width+2] = byte(pixel * 200)
+					yy[py+px+p.Width+p.Width+p.Width+3] = byte(pixel * 200)
+				}
 			}
 		}
 
