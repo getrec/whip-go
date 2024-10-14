@@ -13,10 +13,8 @@ RUN apt-get update --allow-releaseinfo-change && \
         ffmpeg \
         libx264-dev \
         golang-go && \
-   apt-get clean && \
-   rm -rf /var/lib/apt/lists/*
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 WORKDIR /opt/whip-go
 COPY . /opt/whip-go
-RUN go build
-
-
+RUN go build -ldflags="-extldflags=-static"

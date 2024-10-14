@@ -10,7 +10,8 @@ import (
 	"github.com/pion/mediadevices"
 	"github.com/pion/mediadevices/pkg/codec/opus"
 	"github.com/pion/mediadevices/pkg/codec/vpx"
-	"github.com/pion/mediadevices/pkg/codec/x264"
+	"github.com/pion/mediadevices/pkg/codec/openh264"
+	// "github.com/pion/mediadevices/pkg/codec/openh264"
 	"github.com/pion/mediadevices/pkg/prop"
 
 	_ "github.com/getrec/whip-go/driver/audiotest"
@@ -49,18 +50,18 @@ func main() {
 	}
 	opusParams.BitRate = *audioBitrate
 
-	x264Params, err := x264.NewParams()
+	openh264Params, err := openh264.NewParams()
 	if err != nil {
 		panic(err)
 	}
-	x264Params.BitRate = *videoBitrate
-	x264Params.Preset = x264.PresetSuperfast
+	openh264Params.BitRate = *videoBitrate
+	// openh264Params.Preset = openh264.PresetSuperfast
 
 	var videoCodecSelector mediadevices.CodecSelectorOption
 	if *videoCodec == "vp8" {
 		videoCodecSelector = mediadevices.WithVideoEncoders(&vpxParams)
 	} else {
-		videoCodecSelector = mediadevices.WithVideoEncoders(&x264Params)
+		videoCodecSelector = mediadevices.WithVideoEncoders(&openh264Params)
 	}
 	var stream mediadevices.MediaStream
 
